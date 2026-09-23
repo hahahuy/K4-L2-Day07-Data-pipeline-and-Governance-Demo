@@ -71,8 +71,30 @@
     .evidence b { color: var(--text); }
     .note { margin: 1rem 0 0; color: var(--muted); font-size: .78rem; }
     .footer { display: flex; justify-content: space-between; gap: 1rem; flex-wrap: wrap; margin-top: .75rem; padding-top: 1.2rem; border-top: 1px solid var(--line); color: var(--muted); font-size: .77rem; }
+    .comparison { margin-top: 1rem; padding: clamp(1rem, 2.5vw, 2rem); border: 1px solid var(--line); border-radius: 14px; background: #081625; }
+    .comparison-head { display: flex; justify-content: space-between; gap: 1rem; align-items: end; margin-bottom: 1rem; }
+    .comparison h2 { margin: .35rem 0 0; font-size: clamp(1.35rem, 3vw, 2rem); letter-spacing: -.045em; }
+    .comparison-copy { max-width: 48ch; color: var(--muted); font-size: .84rem; line-height: 1.45; }
+    .annotation-grid { display: grid; grid-template-columns: repeat(2, minmax(280px, 1fr)); gap: 1rem; }
+    .annotation-panel { padding: .8rem; border: 1px solid var(--line); border-radius: 10px; background: var(--panel); opacity: .45; transition: opacity .4s ease, border-color .4s ease; }
+    .comparison.is-revealed .annotation-panel { opacity: 1; }
+    .annotation-panel.corrupt { border-color: #ff6f7966; }
+    .panel-title { display: flex; justify-content: space-between; gap: .5rem; margin-bottom: .65rem; font-size: .86rem; font-weight: 800; }
+    .trusted-label { color: var(--cyan); }
+    .corrupt-label { color: var(--red); }
+    .frame { position: relative; overflow: hidden; aspect-ratio: 16 / 9; border-radius: 6px; background: #04101b; }
+    .frame img { display: block; width: 100%; height: 100%; object-fit: cover; }
+    .frame-fallback { display: none; position: absolute; inset: 0; place-items: center; padding: 2rem; color: var(--muted); text-align: center; font-size: .82rem; background: repeating-linear-gradient(135deg, #0b1d2e, #0b1d2e 12px, #0d2236 12px, #0d2236 24px); }
+    .frame.image-missing .frame-fallback { display: grid; }
+    .frame.image-missing img { display: none; }
+    .bbox { position: absolute; border: 2px solid var(--cyan); background: #52d8e815; color: #dffcff; font-size: clamp(.48rem, 1vw, .7rem); font-weight: 800; line-height: 1; opacity: 0; transform: scale(.9); transform-origin: center; transition: opacity .35s ease, transform .35s ease; }
+    .comparison.is-revealed .bbox { opacity: 1; transform: scale(1); }
+    .bbox span { position: absolute; top: -1.5rem; left: -2px; padding: .25rem .35rem; white-space: nowrap; color: #05212a; background: var(--cyan); }
+    .corrupt .bbox { border-color: var(--red); background: #ff6f791c; }
+    .corrupt .bbox span { color: #320b10; background: var(--red); }
+    .panel-caption { min-height: 2.2rem; margin: .65rem 0 0; color: var(--muted); font-size: .75rem; line-height: 1.4; }
     code { color: var(--cyan); }
-    @media (max-width: 780px) { .topbar { align-items: flex-start; flex-direction: column; } h1 { max-width: 12ch; } }
+    @media (max-width: 780px) { .topbar { align-items: flex-start; flex-direction: column; } h1 { max-width: 12ch; } .comparison-head { align-items: start; flex-direction: column; } .annotation-grid { grid-template-columns: 1fr; } }
     @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; scroll-behavior: auto !important; } }
   </style>
 </head>
@@ -164,9 +186,43 @@
       </section>
     </div>
 
+    <section id="comparison" class="comparison" aria-labelledby="comparison-title">
+      <div class="comparison-head">
+        <div>
+          <div class="eyebrow">Real local sample · annotation comparison</div>
+          <h2 id="comparison-title">Same road frame. Different dataset meaning.</h2>
+        </div>
+        <p class="comparison-copy">The trusted and corrupted panels use the same downloaded BDD100K frame. The candidate still has valid box coordinates and category IDs, but its object meaning and geometry are altered.</p>
+      </div>
+      <div class="annotation-grid">
+        <article class="annotation-panel">
+          <div class="panel-title"><span class="trusted-label">Trusted annotations</span><span>COCO baseline</span></div>
+          <div class="frame">
+            <img src="../BDD100k-datasample/val/img/b5753b26-33163d42.jpg" alt="BDD100K road frame with trusted car and traffic-sign annotations" onerror="this.parentElement.classList.add('image-missing')">
+            <div class="frame-fallback">Local BDD100K image not found. Run this page from the repository root with the downloaded sample present.</div>
+            <div class="bbox" style="left:25.7%;top:63.9%;width:10.2%;height:12.6%"><span>car</span></div>
+            <div class="bbox" style="left:53.2%;top:64.0%;width:10.2%;height:13.3%"><span>car</span></div>
+            <div class="bbox" style="left:87.6%;top:45.8%;width:3.8%;height:4.6%"><span>traffic sign</span></div>
+          </div>
+          <p class="panel-caption">Source rectangles: two cars and a traffic sign. Boxes retain their original 1280 x 720 pixel geometry.</p>
+        </article>
+        <article class="annotation-panel corrupt">
+          <div class="panel-title"><span class="corrupt-label">Corrupted candidate annotations</span><span>Still parseable</span></div>
+          <div class="frame">
+            <img src="../BDD100k-datasample/val/img/b5753b26-33163d42.jpg" alt="Same BDD100K road frame with intentionally corrupted annotations" onerror="this.parentElement.classList.add('image-missing')">
+            <div class="frame-fallback">Local BDD100K image not found. Run this page from the repository root with the downloaded sample present.</div>
+            <div class="bbox" style="left:25.7%;top:63.9%;width:5.1%;height:6.3%"><span>traffic sign [wrong]</span></div>
+            <div class="bbox" style="left:53.2%;top:64.0%;width:5.1%;height:6.6%"><span>traffic sign [wrong]</span></div>
+            <div class="bbox" style="left:87.6%;top:45.8%;width:1.9%;height:2.3%"><span>traffic sign</span></div>
+          </div>
+          <p class="panel-caption"><b>Injected failure:</b> <code>car -&gt; traffic sign</code> plus a <code>bbox scale error</code> that halves width and height. JSON and training loaders can still accept this release.</p>
+        </article>
+      </div>
+    </section>
+
     <p class="note"><b>Scenario disclaimer:</b> This is a simulated target demo. Replace illustrative evidence with machine-generated reports when the executable C6 gate and corrupt candidate releases are implemented.</p>
     <footer class="footer">
-      <span>Offline presentation: <code>python -m http.server 8765 --directory demo</code></span>
+      <span>Offline presentation: <code>python -m http.server 8765</code></span>
       <span>Open: <code>http://localhost:8765/pipeline-animation.html</code></span>
     </footer>
   </main>
@@ -179,6 +235,7 @@
     const status = document.querySelector("#stage-status");
     const gateCore = document.querySelector("#gate-core");
     const report = document.querySelector("#report");
+    const comparison = document.querySelector("#comparison");
     const messages = [
       "Trusted ADAS release is the approved baseline.",
       "Vendor conversion and merge create candidate release v1.1.",
@@ -201,6 +258,7 @@
       gateCore.classList.toggle("is-failed", currentStage >= 4);
       gateCore.textContent = currentStage >= 4 ? "5 FAILURES LOCALIZED" : "SCANNING 5 SIGNALS";
       report.classList.toggle("is-revealed", currentStage >= 4);
+      comparison.classList.toggle("is-revealed", currentStage >= 4);
       status.textContent = messages[currentStage];
     }
 

@@ -34,6 +34,11 @@ class PipelineAnimationTest(unittest.TestCase):
             "Restart",
             "Step",
             "prefers-reduced-motion",
+            "b5753b26-33163d42.jpg",
+            "Trusted annotations",
+            "Corrupted candidate annotations",
+            "traffic sign [wrong]",
+            "bbox scale error",
         ]
 
         for text in required_text:
