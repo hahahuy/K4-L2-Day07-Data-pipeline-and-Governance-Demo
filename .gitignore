@@ -1,0 +1,14 @@
+# Raw BDD100K source is downloadable locally and exceeds the GitHub size limit.
+BDD100k-datasample/
+BDD100k-datasample.tar
+
+# The trusted release is reproducible from the raw source and uses local symlinks.
+data/trusted_v1/
+
+# Unrelated local image artifact.
+149266d8-7995-4f5a-8888-56252af0408c.jpeg
+
+# Python test and tooling caches.
+__pycache__/
+*.py[cod]
+.pytest_cache/
