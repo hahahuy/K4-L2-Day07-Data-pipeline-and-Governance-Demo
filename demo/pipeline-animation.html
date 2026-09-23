@@ -1,0 +1,233 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>C6 Semantic Integrity Gate | ADAS Release Demo</title>
+  <style>
+    :root {
+      --canvas: #07111f;
+      --panel: #0d1b2c;
+      --panel-strong: #12263c;
+      --line: #29445e;
+      --text: #e5effa;
+      --muted: #90a8bd;
+      --cyan: #52d8e8;
+      --amber: #ffbf5a;
+      --green: #75db9b;
+      --red: #ff6f79;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-width: 320px;
+      color: var(--text);
+      background: radial-gradient(circle at 16% -10%, #173a55 0, transparent 32rem), var(--canvas);
+      font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+    }
+    main { max-width: 1520px; margin: 0 auto; padding: clamp(1rem, 3vw, 3.5rem); }
+    .eyebrow { color: var(--cyan); font-size: .72rem; font-weight: 800; letter-spacing: .16em; text-transform: uppercase; }
+    h1 { max-width: 15ch; margin: .45rem 0; font-size: clamp(2rem, 5vw, 4.75rem); line-height: .94; letter-spacing: -.06em; }
+    .subtitle { max-width: 70ch; margin: 1rem 0 1.5rem; color: var(--muted); font-size: clamp(1rem, 1.5vw, 1.2rem); line-height: 1.5; }
+    .topbar { display: flex; justify-content: space-between; gap: 1rem; align-items: center; margin-bottom: 2rem; }
+    .status { min-height: 2.6rem; padding: .7rem 1rem; border: 1px solid var(--line); border-radius: 999px; background: #091726; color: var(--muted); font-size: .9rem; }
+    .controls { display: flex; flex-wrap: wrap; gap: .5rem; }
+    button { border: 1px solid var(--line); border-radius: 8px; padding: .65rem .9rem; cursor: pointer; color: var(--text); background: var(--panel); font: inherit; font-weight: 750; }
+    button:hover, button:focus-visible { outline: none; border-color: var(--cyan); background: #173248; }
+    .controls button:first-child { color: #06202b; border-color: var(--cyan); background: var(--cyan); }
+    .pipeline { display: grid; grid-template-columns: repeat(5, minmax(196px, 1fr)); gap: 1.15rem; min-width: 1100px; position: relative; }
+    .pipeline-wrap { overflow-x: auto; padding: 1rem 0 1.5rem; }
+    .connector-layer { position: absolute; z-index: 0; inset: 120px 5% auto; width: 90%; height: 80px; overflow: visible; pointer-events: none; }
+    .connector { stroke: var(--line); stroke-width: 2.5; fill: none; stroke-dasharray: 8 8; transition: stroke .4s ease; }
+    .connector.is-active { stroke: var(--cyan); animation: flow 1s linear infinite; }
+    @keyframes flow { to { stroke-dashoffset: -32; } }
+    .card { z-index: 1; position: relative; min-height: 310px; padding: 1.1rem; border: 1px solid var(--line); border-radius: 14px; background: linear-gradient(145deg, var(--panel-strong), var(--panel)); box-shadow: 0 20px 45px #0004; opacity: .45; transform: translateY(12px); transition: opacity .5s ease, transform .5s ease, border-color .5s ease, box-shadow .5s ease; }
+    .card.is-active { opacity: 1; transform: translateY(0); border-color: #3b688b; }
+    .card.is-current { border-color: var(--cyan); box-shadow: 0 0 0 1px #52d8e844, 0 20px 45px #0004; }
+    .card h2 { margin: .8rem 0 .35rem; font-size: 1.2rem; letter-spacing: -.025em; }
+    .card p { margin: 0; color: var(--muted); font-size: .88rem; line-height: 1.45; }
+    .num { display: grid; width: 2rem; height: 2rem; place-items: center; border: 1px solid var(--line); border-radius: 50%; color: var(--cyan); font-size: .8rem; font-weight: 800; }
+    .metrics { display: grid; gap: .55rem; margin-top: 1.25rem; }
+    .metric { display: flex; align-items: baseline; justify-content: space-between; border-top: 1px solid #29445e80; padding-top: .55rem; color: var(--muted); font-size: .78rem; }
+    .metric b { color: var(--text); font-size: 1rem; }
+    .tag { display: inline-block; margin-top: 1rem; padding: .35rem .5rem; border-radius: 5px; color: #402600; background: var(--amber); font-size: .7rem; font-weight: 850; letter-spacing: .08em; text-transform: uppercase; }
+    .acceptance { display: grid; gap: .6rem; margin-top: 1.35rem; }
+    .accept { padding: .6rem .7rem; border: 1px solid #3c7e5880; border-radius: 7px; color: var(--green); background: #0c2b20; font-size: .8rem; font-weight: 750; }
+    .gate-core { display: grid; place-items: center; height: 3.75rem; margin: 1rem 0; border: 1px solid #3c7e5880; border-radius: 9px; color: var(--green); background: #0c2b20; font-size: .86rem; font-weight: 850; transition: background .45s ease, color .45s ease, border-color .45s ease; }
+    .gate-core.is-failed { border-color: #ff6f79aa; color: var(--red); background: #351720; animation: alert .7s ease-in-out 2; }
+    @keyframes alert { 50% { box-shadow: 0 0 0 6px #ff6f7920; } }
+    .checks { display: grid; gap: .45rem; }
+    .check { display: flex; align-items: center; gap: .45rem; color: var(--muted); font-size: .77rem; opacity: .35; transition: opacity .35s ease, color .35s ease; }
+    .check::before { content: "..."; display: inline-grid; width: 1.15rem; height: 1.15rem; place-items: center; border: 1px solid var(--line); border-radius: 50%; font-size: .58rem; }
+    .check.is-failed { opacity: 1; color: var(--red); }
+    .check.is-failed::before { content: "!"; border-color: var(--red); background: #351720; font-weight: 900; }
+    .report { border-color: #ff6f7966; }
+    .decision { margin: .85rem 0; color: #ffdce0; font-size: 2.6rem; font-weight: 900; letter-spacing: -.08em; opacity: .22; transition: opacity .4s ease, color .4s ease; }
+    .report.is-revealed .decision { color: var(--red); opacity: 1; }
+    .evidence { display: grid; gap: .5rem; margin-top: 1rem; opacity: .25; transition: opacity .45s ease .2s; }
+    .report.is-revealed .evidence { opacity: 1; }
+    .evidence div { padding-left: .65rem; border-left: 2px solid var(--red); color: var(--muted); font-size: .76rem; line-height: 1.35; }
+    .evidence b { color: var(--text); }
+    .note { margin: 1rem 0 0; color: var(--muted); font-size: .78rem; }
+    .footer { display: flex; justify-content: space-between; gap: 1rem; flex-wrap: wrap; margin-top: .75rem; padding-top: 1.2rem; border-top: 1px solid var(--line); color: var(--muted); font-size: .77rem; }
+    code { color: var(--cyan); }
+    @media (max-width: 780px) { .topbar { align-items: flex-start; flex-direction: column; } h1 { max-width: 12ch; } }
+    @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; scroll-behavior: auto !important; } }
+  </style>
+</head>
+<body>
+  <main>
+    <div class="eyebrow">C6 · Dataset Semantic Integrity Gate</div>
+    <h1>Data can parse and still be wrong.</h1>
+    <p class="subtitle">A VinFast-relevant front-camera ADAS release moves through conversion and vendor merge. The candidate stays trainable, but the release gate finds the meaning-changing defects before training begins.</p>
+
+    <div class="topbar">
+      <div id="stage-status" class="status" aria-live="polite">Ready: trusted ADAS release is the approved baseline.</div>
+      <div class="controls" aria-label="Animation controls">
+        <button type="button" id="play">Play</button>
+        <button type="button" id="pause">Pause</button>
+        <button type="button" id="restart">Restart</button>
+        <button type="button" id="step">Step</button>
+      </div>
+    </div>
+
+    <div class="pipeline-wrap">
+      <section class="pipeline" aria-label="Simulated ADAS dataset release pipeline">
+        <svg class="connector-layer" viewBox="0 0 1000 80" aria-hidden="true">
+          <path class="connector" data-connector="0" d="M30 40 H250" />
+          <path class="connector" data-connector="1" d="M275 40 H490" />
+          <path class="connector" data-connector="2" d="M515 40 H730" />
+          <path class="connector" data-connector="3" d="M755 40 H970" />
+        </svg>
+
+        <article class="card" data-stage="0">
+          <div class="num">01</div>
+          <h2>Trusted ADAS Release</h2>
+          <p>Frozen canonical COCO baseline built from BDD100K front-camera frames.</p>
+          <div class="metrics">
+            <div class="metric"><span>Frames</span><b>109</b></div>
+            <div class="metric"><span>Detection boxes</span><b>2,291</b></div>
+            <div class="metric"><span>Approved classes</span><b>9</b></div>
+          </div>
+          <span class="tag">Contract + hashes</span>
+        </article>
+
+        <article class="card" data-stage="1">
+          <div class="num">02</div>
+          <h2>Vendor conversion + merge</h2>
+          <p>Export to YOLO, a supplier batch, and a merge return one candidate release.</p>
+          <div class="metrics">
+            <div class="metric"><span>Format boundary</span><b>COCO ↔ YOLO</b></div>
+            <div class="metric"><span>Risk</span><b>Silent drift</b></div>
+          </div>
+          <span class="tag">Candidate v1.1</span>
+        </article>
+
+        <article class="card" data-stage="2">
+          <div class="num">03</div>
+          <h2>Candidate Release</h2>
+          <p>The artifact looks healthy to conventional pipeline checks.</p>
+          <div class="acceptance">
+            <div class="accept">✓ JSON parses</div>
+            <div class="accept">✓ Training loader accepts</div>
+          </div>
+          <p class="note">Syntax success does not prove semantic integrity.</p>
+        </article>
+
+        <article class="card" data-stage="3">
+          <div class="num">04</div>
+          <h2>Semantic Integrity Gate</h2>
+          <p>Compare the candidate against the trusted contract, manifests, and release fingerprint.</p>
+          <div id="gate-core" class="gate-core">SCANNING 5 SIGNALS</div>
+          <div class="checks" aria-label="Gate checks">
+            <div class="check">Class-map contract</div>
+            <div class="check">Geometry drift</div>
+            <div class="check">Image linkage</div>
+            <div class="check">Round-trip IoU</div>
+            <div class="check">Split leakage</div>
+          </div>
+        </article>
+
+        <article id="report" class="card report" data-stage="4">
+          <div class="num">05</div>
+          <h2>Evidence Report</h2>
+          <div class="decision">FAIL</div>
+          <p>Block this candidate before ADAS training.</p>
+          <div class="evidence">
+            <div><b>Class map:</b> traffic light remapped to traffic sign</div>
+            <div><b>Geometry:</b> median small-object area drops 71%</div>
+            <div><b>Lineage:</b> 3 train frames duplicated in validation</div>
+            <div><b>Round-trip:</b> mean IoU 0.63, below policy 0.98</div>
+          </div>
+        </article>
+      </section>
+    </div>
+
+    <p class="note"><b>Scenario disclaimer:</b> This is a simulated target demo. Replace illustrative evidence with machine-generated reports when the executable C6 gate and corrupt candidate releases are implemented.</p>
+    <footer class="footer">
+      <span>Offline presentation: <code>python -m http.server 8765 --directory demo</code></span>
+      <span>Open: <code>http://localhost:8765/pipeline-animation.html</code></span>
+    </footer>
+  </main>
+
+  <script>
+    const stages = ["trusted", "conversion", "candidate", "gate", "report"];
+    const cards = [...document.querySelectorAll(".card[data-stage]")];
+    const connectors = [...document.querySelectorAll("[data-connector]")];
+    const checks = [...document.querySelectorAll(".check")];
+    const status = document.querySelector("#stage-status");
+    const gateCore = document.querySelector("#gate-core");
+    const report = document.querySelector("#report");
+    const messages = [
+      "Trusted ADAS release is the approved baseline.",
+      "Vendor conversion and merge create candidate release v1.1.",
+      "Candidate JSON parses and the training loader accepts it.",
+      "Semantic gate compares ontology, geometry, lineage, round-trip, and splits.",
+      "FAIL: semantic corruption is localized with evidence."
+    ];
+    let currentStage = 0;
+    let timer = null;
+    const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+    function showStage(index) {
+      currentStage = Math.max(0, Math.min(index, stages.length - 1));
+      cards.forEach((card, cardIndex) => {
+        card.classList.toggle("is-active", cardIndex <= currentStage);
+        card.classList.toggle("is-current", cardIndex === currentStage);
+      });
+      connectors.forEach((connector, connectorIndex) => connector.classList.toggle("is-active", connectorIndex < currentStage));
+      checks.forEach((check, checkIndex) => check.classList.toggle("is-failed", currentStage >= 3 && checkIndex <= currentStage + 1));
+      gateCore.classList.toggle("is-failed", currentStage >= 4);
+      gateCore.textContent = currentStage >= 4 ? "5 FAILURES LOCALIZED" : "SCANNING 5 SIGNALS";
+      report.classList.toggle("is-revealed", currentStage >= 4);
+      status.textContent = messages[currentStage];
+    }
+
+    function pause() {
+      if (timer !== null) {
+        window.clearInterval(timer);
+        timer = null;
+      }
+    }
+
+    function play() {
+      pause();
+      if (currentStage === stages.length - 1) showStage(0);
+      timer = window.setInterval(() => {
+        if (currentStage === stages.length - 1) {
+          pause();
+          return;
+        }
+        showStage(currentStage + 1);
+      }, 1400);
+    }
+
+    document.querySelector("#play").addEventListener("click", play);
+    document.querySelector("#pause").addEventListener("click", pause);
+    document.querySelector("#restart").addEventListener("click", () => { pause(); showStage(0); });
+    document.querySelector("#step").addEventListener("click", () => { pause(); showStage(currentStage === stages.length - 1 ? 0 : currentStage + 1); });
+    showStage(reducedMotion ? stages.length - 1 : 0);
+  </script>
+</body>
+</html>
