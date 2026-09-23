@@ -39,6 +39,10 @@ class PipelineAnimationTest(unittest.TestCase):
             "Corrupted candidate annotations",
             "traffic sign [wrong]",
             "bbox scale error",
+            "Image-linkage mismatch",
+            "Split leakage",
+            "image_id 042",
+            "train/b5753b26-33163d42.jpg == val/b5753b26-33163d42.jpg",
         ]
 
         for text in required_text:

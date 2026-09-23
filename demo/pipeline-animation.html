@@ -69,6 +69,11 @@
     .report.is-revealed .evidence { opacity: 1; }
     .evidence div { padding-left: .65rem; border-left: 2px solid var(--red); color: var(--muted); font-size: .76rem; line-height: 1.35; }
     .evidence b { color: var(--text); }
+    .failure-cases { display: grid; grid-template-columns: repeat(2, minmax(210px, 1fr)); gap: .7rem; margin-top: .9rem; opacity: .25; transition: opacity .45s ease .3s; }
+    .report.is-revealed .failure-cases { opacity: 1; }
+    .failure-case { padding: .75rem; border: 1px solid #ff6f7955; border-radius: 7px; background: #35172055; }
+    .failure-case h3 { margin: 0 0 .35rem; color: var(--red); font-size: .78rem; }
+    .failure-case p { color: var(--muted); font-size: .71rem; line-height: 1.35; }
     .note { margin: 1rem 0 0; color: var(--muted); font-size: .78rem; }
     .footer { display: flex; justify-content: space-between; gap: 1rem; flex-wrap: wrap; margin-top: .75rem; padding-top: 1.2rem; border-top: 1px solid var(--line); color: var(--muted); font-size: .77rem; }
     .comparison { margin-top: 1rem; padding: clamp(1rem, 2.5vw, 2rem); border: 1px solid var(--line); border-radius: 14px; background: #081625; }
@@ -181,6 +186,16 @@
             <div><b>Geometry:</b> median small-object area drops 71%</div>
             <div><b>Lineage:</b> 3 train frames duplicated in validation</div>
             <div><b>Round-trip:</b> mean IoU 0.63, below policy 0.98</div>
+          </div>
+          <div class="failure-cases" aria-label="Additional simulated failure evidence">
+            <div class="failure-case">
+              <h3>Image-linkage mismatch</h3>
+              <p>Annotation for this road frame points to <code>image_id 042</code> after a vendor merge. The target image exists, so the JSON remains valid.</p>
+            </div>
+            <div class="failure-case">
+              <h3>Split leakage</h3>
+              <p><code>train/b5753b26-33163d42.jpg == val/b5753b26-33163d42.jpg</code>. Training and evaluation both run, but validation is contaminated.</p>
+            </div>
           </div>
         </article>
       </section>
